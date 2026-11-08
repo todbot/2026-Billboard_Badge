@@ -8,12 +8,15 @@ from array import array
 from apps.base_app import BaseApp
 from lib.epd import display
 from lib.led_bar import leds
+from lib.touchwheel import color_wheel, touchwheel
 
 _BACKGROUND = "/data/graphics/hello_i_am_clock.png"
 # The plus sign on the background marks the hand pivot
 _CX = 480
 _CY = 390
 _UPDATE_MINS = 5
+# 14 scanner steps per bounce, so about one rainbow per bounce
+_HUE_STEP = 18
 _SAVED_TIME = "/data/clock_time"
 # An unset RTC reads 2000-01-01
 _RTC_SET_YEAR = 2025
@@ -84,6 +87,7 @@ class NametagClockApp(BaseApp):
         self.last_time = time.ticks_ms()
         self.ledi = 0
         self.led_dir = 1
+        self.hue = 0
         self.shown = None
         self.saved_minute = None
 
@@ -119,3 +123,5 @@ class NametagClockApp(BaseApp):
                 self.led_dir = -self.led_dir
             leds[self.ledi] = (7, 0, 15)
             leds.write()
+            self.hue = (self.hue + _HUE_STEP) % 256
+            touchwheel.rgbs([color_wheel(self.hue + n * 85) for n in range(3)])
