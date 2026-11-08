@@ -1,12 +1,13 @@
 """Nametag app"""
 
 import lvgl
+import time
 
 from apps.base_app import BaseApp
 from lib.button import MenuMinus, MenuPlus, UserA, UserB, Boot
 from lib.epd import display, display_height
 from lib.led_bar import leds
-
+from lib.sao import SAO2
 
 _WHITE = lvgl.color_hex(0xFFFFFF)
 _RED = lvgl.color_hex(0xFF0000)
@@ -17,12 +18,23 @@ _NAME_TOP = 221
 _NAME_BOTTOM = 557
 _NAME_DY = (_NAME_TOP + _NAME_BOTTOM) // 2 - display_height // 2
 
+# def touchwheel_rgb(bus, r, g, b):
+#     """RGB color on the central display.  Each 0-255"""
+#     bus.writeto_mem(84, 15, bytes([r]))
+#     bus.writeto_mem(84, 16, bytes([g]))
+#     bus.writeto_mem(84, 17, bytes([b]))
+            
+
 
 class NametagApp(BaseApp):
     def __init__(self, name: str | None = None) -> None:
         self.name = "Nametag"
         self.sleep_ms = 100
         self.launched = False
+        #self.updatetime = 1
+        self.last_time = time.ticks_ms()
+        self.ledi = 0
+        self.led_dir = 1
 
     def run(self):
         if self.launched:
@@ -66,4 +78,26 @@ class NametagApp(BaseApp):
             lvgl.refr_now(display.lv_display)
             display.update()
             leds.fill((0,1,0))
+
+            #touchwheel_rgb(SAO2, 33,0,33)
+
+        else:
+            now = time.ticks_ms()
+            fade_by = 6
+            fade_by_fl = 0.70
+            for i in range(8):
+                #leds[i] = [max(c - fade_by, 0) for c in leds[i]]
+                leds[i] = [max(int(c * fade_by_fl), 0) for c in leds[i]]
+            #leds[:] = [[min(max(i+fade_by,0),255) for i in l] for l in leds] # dim all by fade_by
+
+            if now - self.last_time > 100:
+                self.last_time = now
+                self.ledi += self.led_dir
+                if self.ledi in (0, 7):
+                    self.led_dir = -self.led_dir
+                leds[self.ledi] = (7, 0, 15)
+                leds.write()
+                #print("hi", self.ledi)
+            
+
 
